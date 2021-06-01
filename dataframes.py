@@ -19,10 +19,10 @@ def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods
         balance_with_interest = formulas.compound_interest_amount(balance[i - 1], apr / payments_per_period, 1, 1)
         balance[i] = balance_with_interest - payment[i]
 
-    payments = np.cumsum(payment)
+    total_paid = np.cumsum(payment)
     equity = principal - balance
-    interest = payments - equity
-    principal_paid = payments - interest
+    interest = total_paid - equity
+    principal_paid = total_paid - interest
 
     df = pd.DataFrame(
         {
@@ -30,7 +30,7 @@ def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods
             'mortgage balance': balance,
             # 'amount owed': amount,
             'mortgage payment': payment,
-            'payments': payments,
+            'total paid': total_paid,
             'equity': equity + down_pmt,
             'principal paid': principal_paid,
             'interest paid': interest,
