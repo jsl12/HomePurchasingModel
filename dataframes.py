@@ -1,11 +1,13 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 import formulas
 
 
-def mortgage_amortization(principal, apr, n, duration, down_pmt):
-    t = np.arange(duration * n + 1)
-    single_payment = formulas.payment(principal, apr, n, duration)
+def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods):
+    apr = apr / 100 if apr >= 1.0 else apr
+    t = np.arange(periods * payments_per_period + 1)
+    single_payment = formulas.payment(principal, apr, payments_per_period, periods)
     payment = np.full(t.size, single_payment)
     payment[0] = 0
     payments = np.cumsum(payment)
@@ -14,7 +16,7 @@ def mortgage_amortization(principal, apr, n, duration, down_pmt):
     amount[0] = principal
     net_amount[0] = principal
     for i in t[1:]:
-        amount[i] = formulas.compound_interest_amount(net_amount[i - 1], apr / n, 1, 1)
+        amount[i] = formulas.compound_interest_amount(net_amount[i - 1], apr / payments_per_period, 1, 1)
         net_amount[i] = amount[i] - payment[i]
     equity = principal - net_amount
     interest = payments - equity
