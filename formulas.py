@@ -12,22 +12,17 @@ def compound_interest_amount(p, r, n, t):
     """
     return p * np.power((1 + r/n), n*t)
 
-def payment(p, r, n, t):
-    """
-    >>> payment(100000, 0.07, 12, 30)
-    665.3024951791823
-    """
-    return compound_interest_amount(p, r, n, t) * r/n / (np.power((1+r/n), n*t) - 1)
 
-
-def mortgage_payment(loan_amount: Union[float, int], interest_rate: float, num_years: int, payments_per_year: int = 12) -> float:
+def mortgage_payment(loan_amount: Union[float, int],
+                     interest_rate: float,
+                     num_years: int,
+                     payments_per_year: int = 12) -> float:
     """
     Calculates a monthly mortgage payment
 
     Parameters
     ----------
     loan_amount : float or int
-
     interest_rate : float
     num_years : int
     payments_per_year : int
@@ -40,6 +35,9 @@ def mortgage_payment(loan_amount: Union[float, int], interest_rate: float, num_y
     Notes
     -----
     https://www.thebalance.com/calculate-mortgage-315668
+
+    >>> mortage_payment(100*10**3, 0.07, 30, 12)
+    665.3024951791823
     """
     period_interest = interest_rate / payments_per_year
     period_multiplier = (1 + period_interest)**(num_years * payments_per_year)

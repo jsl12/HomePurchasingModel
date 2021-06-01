@@ -1,13 +1,43 @@
+from typing import Union
+
 import numpy as np
 import pandas as pd
 
 import formulas
 
 
-def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods):
+def mortgage_amortization(principal: Union[float, int],
+                          down_pmt: Union[float, int],
+                          apr: float,
+                          num_years: int = 30,
+                          payments_per_year: int = 12) -> pd.DataFrame:
+    """
+    Creates a `pd.DataFrame` of the mortgage amortization with the following columns:
+     - mortgage balance
+     - mortgage payment
+     - total paid
+     - equity
+     - principal paid
+     - interest paid
+
+    Parameters
+    ----------
+    principal : float or int
+    down_pmt : float or int
+    apr : float
+    num_years : int
+    payments_per_year : int
+
+    Returns
+    -------
+    pd.DataFrame
+    """
     apr = apr / 100 if apr >= 1.0 else apr
-    t = np.arange(periods * payments_per_period + 1)
-    single_payment = formulas.payment(principal, apr, payments_per_period, periods)
+    t = np.arange(num_years * payments_per_year + 1)
+    single_payment = formulas.mortgage_payment(loan_amount=principal,
+                                               interest_rate=apr,
+                                               num_years=num_years,
+                                               payments_per_year=payments_per_year)
 
     payment = np.full(t.size, single_payment)
     payment[0] = 0
@@ -15,9 +45,9 @@ def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods
     balance = np.zeros(t.size)
     balance[0] = principal
 
-    for i in t[1:]:
-        balance_with_interest = formulas.compound_interest_amount(balance[i - 1], apr / payments_per_period, 1, 1)
-        balance[i] = balance_with_interest - payment[i]
+    period_interest_multiplier = (1 + (apr / payments_per_year))
+    for i in np.nditer(t[1:]):
+        balance[i] = ((balance[i - 1] * period_interest_multiplier) - payment[i])
 
     total_paid = np.cumsum(payment)
     equity = principal - balance
@@ -40,7 +70,24 @@ def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods
     return df
 
 
-def property_tax_amortization(appraisal_val, tax_rate, payments_n, duration, appraisal_growth_rate):
+def property_tax_amortization(appraisal_val: Union[float, int],
+                              tax_rate: float,
+                              duration: int,
+                              appraisal_growth_rate: float) -> pd.DataFrame:
+    """
+
+    Parameters
+    ----------
+    appraisal_val : float or int
+    tax_rate : float
+    duration : int
+    appraisal_growth_rate : float
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+
     t = np.arange(duration)
 
     vectorized_tax_growth = np.vectorize(
