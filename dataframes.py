@@ -8,23 +8,26 @@ def mortgage_amortization(principal, down_pmt, apr, payments_per_period, periods
     apr = apr / 100 if apr >= 1.0 else apr
     t = np.arange(periods * payments_per_period + 1)
     single_payment = formulas.payment(principal, apr, payments_per_period, periods)
+
     payment = np.full(t.size, single_payment)
     payment[0] = 0
-    payments = np.cumsum(payment)
-    amount = np.zeros(t.size)
-    net_amount = np.zeros(t.size)
-    amount[0] = principal
-    net_amount[0] = principal
+
+    balance = np.zeros(t.size)
+    balance[0] = principal
+
     for i in t[1:]:
-        amount[i] = formulas.compound_interest_amount(net_amount[i - 1], apr / payments_per_period, 1, 1)
-        net_amount[i] = amount[i] - payment[i]
-    equity = principal - net_amount
+        balance_with_interest = formulas.compound_interest_amount(balance[i - 1], apr / payments_per_period, 1, 1)
+        balance[i] = balance_with_interest - payment[i]
+
+    payments = np.cumsum(payment)
+    equity = principal - balance
     interest = payments - equity
     principal_paid = payments - interest
+
     df = pd.DataFrame(
         {
             'month': t,
-            'mortgage balance': net_amount,
+            'mortgage balance': balance,
             # 'amount owed': amount,
             'mortgage payment': payment,
             'payments': payments,
