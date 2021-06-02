@@ -1,3 +1,5 @@
+import math
+from datetime import datetime
 from typing import Union
 
 import numpy as np
@@ -106,3 +108,50 @@ def property_tax_amortization(appraisal_val: Union[float, int],
         }
     )
     return df.set_index('year')
+
+
+def return_on_investment(initial_value: Union[float, int],
+                         down_payment: Union[float, int],
+                         loan_interest_rate: float,
+                         num_years: int = 30,
+                         payments_per_year: int = 12,
+                         property_tax_rate: float = 0.02,
+                         apprasial_growth: float = 0.04
+                         ) -> pd.DataFrame:
+    tax_df = property_tax_amortization(
+        appraisal_val=initial_value,
+        tax_rate=property_tax_rate,
+        duration=num_years + 1,
+        appraisal_growth_rate=apprasial_growth
+    )
+    tax_df.index = pd.date_range(start=datetime.today().date(),
+                                 periods=tax_df.shape[0],
+                                 freq='A')
+    end_date = datetime.today().date()
+    end_date = end_date.replace(year=end_date.year + tax_df.shape[0] - 1,
+                                month=end_date.month + 1)
+    tax_df = tax_df.reindex(pd.date_range(start=datetime.today().date(),
+                                          end=end_date,
+                                          freq='M'),
+                            method='bfill')
+
+    mortgage_df = mortgage_amortization(
+        principal=initial_value - down_payment,
+        down_pmt=down_payment,
+        apr=loan_interest_rate,
+        payments_per_year=payments_per_year,
+        num_years=num_years
+    )
+    mortgage_df.index = pd.date_range(start=datetime.today().date(),
+                             periods=mortgage_df.shape[0],
+                             freq='M')
+    df = pd.merge(mortgage_df, tax_df, left_index=True, right_index=True, how='outer')
+    df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment']
+    df['equity'] = df['appraisal value'] - df['mortgage balance']
+    df['roi'] = df['equity'] / (df['total paid'] + down_payment)
+    df['annualized interest rate'] = 0
+    df.loc[df.index[0]:, 'annualized interest rate'] = [
+        (math.exp(math.log(roi) / ((n + 1) / 12)) - 1)
+        for n, roi in enumerate(np.nditer(df['roi']))
+    ]
+    return df
