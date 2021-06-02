@@ -1,5 +1,4 @@
 import math
-from datetime import datetime
 from typing import Union
 
 import numpy as np
@@ -133,7 +132,7 @@ def return_on_investment(initial_value: Union[float, int],
                   how='outer')
 
     df['pmi'] = 0
-    if down_payment <= (initial_value * 0.2):
+    if down_payment < (initial_value * 0.2):
         for month, row in df.iterrows():
             if row['equity'] < (row['appraisal value'] * 0.2):
                 df.loc[month, 'pmi'] = (row['mortgage balance'] * pmi_rate) / 12
