@@ -47,7 +47,7 @@ def mortgage_amortization(principal: Union[float, int],
 
     period_interest_multiplier = (1 + (apr / payments_per_year))
     for i in np.nditer(t[1:]):
-        balance[i] = ((balance[i - 1] * period_interest_multiplier) - payment[i])
+        balance[i] = (balance[i - 1] * period_interest_multiplier) - payment[i]
 
     total_paid = np.cumsum(payment)
     equity = principal - balance
