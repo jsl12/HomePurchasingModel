@@ -110,6 +110,7 @@ def return_on_investment(initial_value: Union[float, int],
                          down_payment: Union[float, int],
                          loan_interest_rate: float,
                          num_years: int = 30,
+                         pmi_rate: float = .015,
                          property_tax_rate: float = 0.02,
                          apprasial_growth: float = 0.04) -> pd.DataFrame:
     tax_df = property_tax_amortization(
@@ -130,7 +131,15 @@ def return_on_investment(initial_value: Union[float, int],
                   left_index=True,
                   right_index=True,
                   how='outer')
-    df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment']
+
+    df['pmi'] = 0
+    if down_payment <= (initial_value * 0.2):
+        for month, row in df.iterrows():
+            if row['equity'] < (row['appraisal value'] * 0.2):
+                df.loc[month, 'pmi'] = (row['mortgage balance'] * pmi_rate) / 12
+
+    df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment'] + df['pmi']
+    df['total paid'] = df['total monthly payment'].cumsum()
     df['equity'] = df['appraisal value'] - df['mortgage balance']
     df['roi'] = df['equity'] / (df['total paid'] + down_payment)
     df['annualized roi'] = [
