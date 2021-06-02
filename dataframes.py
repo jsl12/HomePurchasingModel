@@ -118,24 +118,14 @@ def return_on_investment(initial_value: Union[float, int],
         duration=num_years + 1,
         appraisal_growth_rate=apprasial_growth
     )
-    tax_df.index = pd.date_range(start=datetime.today().date(),
-                                 periods=tax_df.shape[0],
-                                 freq='A')
-    end_date = datetime.today().date()
-    end_date = end_date.replace(year=end_date.year + tax_df.shape[0] - 1,
-                                month=end_date.month + 1)
-    tax_df = tax_df.reindex(pd.date_range(start=datetime.today().date(),
-                                          end=end_date,
-                                          freq='M'),
-                            method='bfill')
+    tax_df.index = pd.Index(data=tax_df.index*12, name='month')
+    tax_df = tax_df.reindex(np.arange(tax_df.index[-1] + 1), method='pad')
 
     mortgage_df = mortgage_amortization(principal=initial_value - down_payment,
                                         down_pmt=down_payment,
                                         apr=loan_interest_rate,
                                         num_years=num_years)
-    mortgage_df.index = pd.date_range(start=datetime.today().date(),
-                                      periods=mortgage_df.shape[0],
-                                      freq='M')
+
     df = pd.merge(mortgage_df, tax_df,
                   left_index=True,
                   right_index=True,
