@@ -9,14 +9,13 @@ from dataframes import return_on_investment
 
 
 def annualized_return_vs_growth(initial_value: Union[float, int],
-                                down_payment: Union[float, int],
                                 loan_interest_rate: float,
                                 growth_rates,
                                 num_years: int = 30,
                                 pmi_rate: float = .015,
-                                property_tax_rate: float = 0.02):
+                                property_tax_rate: float = 0.02, **kwargs):
     down_payments = np.arange(0.05, 0.25, 0.05) * initial_value
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(**kwargs)
     ax.plot(pd.DataFrame({
         dp: pd.Series([
             return_on_investment(
@@ -43,7 +42,7 @@ def annualized_return_vs_growth(initial_value: Union[float, int],
     ax.grid(True)
     ax.set_xlim(0, ax.get_xlim()[1])
     ax.set_xlabel('Annualized Growth Rate')
-    ax.legend()
+    ax.legend(title='Down Payment')
 
 
 def monthly_payment_vs_down_pmt(loan_interest_rate: float,
@@ -53,9 +52,6 @@ def monthly_payment_vs_down_pmt(loan_interest_rate: float,
                                 **kwargs):
     df = pd.DataFrame(columns=pd.Index(np.arange(200, 650, 50)),
                       index=pd.Index(np.arange(25, 205, 5), name='down_pmt'))
-    # df = df.applymap(
-    #     lambda
-    # )
 
     for idx in np.arange(df.shape[0]):
         for col in np.arange(df.shape[1]):
