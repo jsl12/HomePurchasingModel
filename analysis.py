@@ -8,14 +8,14 @@ import pandas as pd
 from dataframes import return_on_investment
 
 
-def annualized_return_vs_growth(initial_value: Union[float, int],
+def cagr_vs_growth(initial_value: Union[float, int],
                                 loan_interest_rate: float,
                                 closing_rate: float,
-                                growth_rates,
                                 num_years: int = 30,
                                 pmi_rate: float = .015,
                                 property_tax_rate: float = 0.02, **kwargs):
-    down_payments = np.arange(0.05, 0.25, 0.05) * initial_value
+    down_payments = np.arange(0.05, 0.45, 0.05) * initial_value
+    growth_rates = np.arange(0.01, 0.15, 0.005)
     fig, ax = plt.subplots(**kwargs)
     ax.plot(pd.DataFrame({
         dp: pd.Series([
@@ -37,12 +37,12 @@ def annualized_return_vs_growth(initial_value: Union[float, int],
     )
     ax.set_title(f'${initial_value/10**3:.0f}k house, {num_years} year loan, {loan_interest_rate*100:.1f}% APR')
     ax.set_ylim(-3, ax.get_ylim()[1])
-    ax.set_ylabel('Annualized Return')
+    ax.set_ylabel('Compound Annual Growth Rate')
     ax.xaxis.set_major_formatter('{x:.0f}%')
     ax.yaxis.set_major_formatter('{x:.0f}%')
     ax.grid(True)
     ax.set_xlim(0, ax.get_xlim()[1])
-    ax.set_xlabel('Annualized Growth Rate')
+    ax.set_xlabel('Asset Appreciation APR')
     ax.legend(title='Down Payment')
 
 
