@@ -10,6 +10,7 @@ from dataframes import return_on_investment
 
 def annualized_return_vs_growth(initial_value: Union[float, int],
                                 loan_interest_rate: float,
+                                closing_rate: float,
                                 growth_rates,
                                 num_years: int = 30,
                                 pmi_rate: float = .015,
@@ -19,14 +20,14 @@ def annualized_return_vs_growth(initial_value: Union[float, int],
     ax.plot(pd.DataFrame({
         dp: pd.Series([
             return_on_investment(
-                initial_value,
-                dp,
-                loan_interest_rate,
-                num_years,
-                pmi_rate,
-                property_tax_rate,
-                g
-            )['cagr'].iloc[-1] * 100
+                initial_value=initial_value,
+                down_payment=dp,
+                closing_rate=closing_rate,
+                loan_interest_rate=loan_interest_rate,
+                num_years=num_years,
+                pmi_rate=pmi_rate,
+                property_tax_rate=property_tax_rate,
+                apprasial_growth=g)['cagr'].iloc[-1] * 100
             for g in growth_rates
         ],
             index=growth_rates * 100)

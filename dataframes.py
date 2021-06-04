@@ -128,6 +128,7 @@ def amortization_summary(ma_df, tax_df):
 
 def return_on_investment(initial_value: Union[float, int],
                          down_payment: Union[float, int],
+                         closing_rate: float,
                          loan_interest_rate: float,
                          num_years: int = 30,
                          pmi_rate: float = .015,
@@ -161,22 +162,24 @@ def return_on_investment(initial_value: Union[float, int],
     df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment'] + df['pmi']
     df['tax paid'] = df['monthly tax payment'].cumsum()
     df['pmi paid'] = df['pmi'].cumsum()
-    df['total paid'] = df['total monthly payment'].cumsum()
+    df['total paid'] = df['total monthly payment'].cumsum() + \
+                       down_payment + \
+                       (closing_rate * df['mortgage balance'].iloc[0])
     df['equity'] = df['appraisal value'] - df['mortgage balance']
-    df['roi'] = df['equity'] / (df['total paid'] + down_payment)
     df['cagr'] = [
         math.exp(math.log(roi) / (n / 12)) - 1
         if n > 0 else 0
-        for n, roi in enumerate(np.nditer(df['roi']))
+        for n, roi in enumerate(np.nditer(df['equity'] / df['total paid']))
     ]
     return df
 
 
 def crossover(crossover: float,
               loan_interest_rate: float,
+              closing_rate: float,
               num_years: int = 30,
               pmi_rate: float = .015,
-              property_tax_rate: float = 0.02):
+              property_tax_rate: float = 0.02) -> pd.DataFrame:
     """
 
     Parameters
@@ -205,14 +208,15 @@ def crossover(crossover: float,
             res = return_on_investment(
                 initial_value=price * 10 ** 3,
                 down_payment=down_pmt * 10 ** 3,
+                closing_rate=closing_rate,
                 loan_interest_rate=loan_interest_rate,
                 num_years=num_years,
                 pmi_rate=pmi_rate,
                 property_tax_rate=property_tax_rate,
-                growth=growth
+                apprasial_growth=growth
             )
         except Exception as e:
-            # logging.exception(e)
+            logging.exception(e)
             logging.error(s)
             break
         else:
