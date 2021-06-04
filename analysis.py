@@ -26,7 +26,7 @@ def annualized_return_vs_growth(initial_value: Union[float, int],
                 pmi_rate,
                 property_tax_rate,
                 g
-            )['annualized roi'].iloc[-1] * 100
+            )['cagr'].iloc[-1] * 100
             for g in growth_rates
         ],
             index=growth_rates * 100)

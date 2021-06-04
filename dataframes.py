@@ -1,3 +1,5 @@
+import itertools
+import logging
 import math
 from typing import Union
 
@@ -110,7 +112,7 @@ def amortization_summary(ma_df, tax_df):
     years = (df.index - 1) / 12 + 1
     df['year'] = years.astype(int)
     df.at[0, 'year'] = 0
-    print(df.keys())
+    # print(df.keys())
     df = df.merge(tax_df[['monthly tax payment', 'appraisal value']], how='left', left_on='year', right_index=True,
                   copy=False)
     df['monthly payment'] = df['mortgage payment'] + df['monthly tax payment']
@@ -137,7 +139,7 @@ def return_on_investment(initial_value: Union[float, int],
         duration=num_years + 1,
         appraisal_growth_rate=apprasial_growth
     )
-    tax_df.index = pd.Index(data=tax_df.index*12, name='month')
+    tax_df.index = pd.Index(data=(tax_df.index - 1) * 12, name='month')
     tax_df = tax_df.reindex(np.arange(tax_df.index[-1] + 1), method='pad')
 
     mortgage_df = mortgage_amortization(principal=initial_value - down_payment,
@@ -157,12 +159,67 @@ def return_on_investment(initial_value: Union[float, int],
                 df.loc[month, 'pmi'] = (row['mortgage balance'] * pmi_rate) / 12
 
     df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment'] + df['pmi']
+    df['tax paid'] = df['monthly tax payment'].cumsum()
+    df['pmi paid'] = df['pmi'].cumsum()
     df['total paid'] = df['total monthly payment'].cumsum()
     df['equity'] = df['appraisal value'] - df['mortgage balance']
     df['roi'] = df['equity'] / (df['total paid'] + down_payment)
-    df['annualized roi'] = [
+    df['cagr'] = [
         math.exp(math.log(roi) / (n / 12)) - 1
         if n > 0 else 0
         for n, roi in enumerate(np.nditer(df['roi']))
     ]
+    return df
+
+
+def crossover(crossover: float,
+              loan_interest_rate: float,
+              num_years: int = 30,
+              pmi_rate: float = .015,
+              property_tax_rate: float = 0.02):
+    """
+
+    Parameters
+    ----------
+    crossover : float
+    loan_interest_rate : float
+    num_years : int
+    pmi_rate : float
+    property_tax_rate : float
+
+    Returns
+    -------
+
+    """
+    down_payments = np.arange(25, 205, 5)
+    initial_values = np.arange(200, 650, 50)
+    asset_growths = np.arange(0, 0.16, 0.01)
+
+    df = pd.DataFrame(
+        columns=pd.MultiIndex.from_product([asset_growths, initial_values], names=['Growth Rate', 'Purchase Price']),
+        index=pd.Index(down_payments, name='Down Payment')
+    )
+    for growth, down_pmt, price in itertools.product(asset_growths, down_payments, initial_values):
+        s = f'Initial value: {down_pmt}, down pmt: {price}, growth: {growth * 100:.1f}%'
+        try:
+            res = return_on_investment(
+                initial_value=price * 10 ** 3,
+                down_payment=down_pmt * 10 ** 3,
+                loan_interest_rate=loan_interest_rate,
+                num_years=num_years,
+                pmi_rate=pmi_rate,
+                property_tax_rate=property_tax_rate,
+                growth=growth
+            )
+        except Exception as e:
+            # logging.exception(e)
+            logging.error(s)
+            break
+        else:
+            # print(s)
+            try:
+                df.loc[down_pmt, (growth, price)] = res[res['cagr'] > crossover].index[0]
+            except Exception as e:
+                df.loc[down_pmt, (growth, price)] = -1
+
     return df
