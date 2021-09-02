@@ -72,7 +72,7 @@ def monthly_payment_vs_down_pmt(loan_interest_rate: float,
                 print(idx, col)
 
     fig, ax = plt.subplots(**kwargs)
-    ax.set_title(f'{num_years} year loan, {loan_interest_rate * 100:.1f}% APR')
+    ax.set_title(f'{num_years} year loan, {loan_interest_rate * 100:.1f}% APR, {pmi_rate*100:.1f}% PMI')
     ax.plot(df, label=[f'${v:.0f}k' for v in df.columns.values])
     ax.grid(True)
     ax.set_ylabel('Initial Monthly Payment')
