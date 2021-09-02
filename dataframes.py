@@ -140,6 +140,8 @@ def return_on_investment(initial_value: Union[float, int],
         duration=num_years + 1,
         appraisal_growth_rate=apprasial_growth
     )
+
+    # convert index from years starting at 1 to months starting at 0, so it can be merged with the other DataFrame
     tax_df.index = pd.Index(data=(tax_df.index - 1) * 12, name='month')
     tax_df = tax_df.reindex(np.arange(tax_df.index[-1] + 1), method='pad')
 
@@ -153,6 +155,7 @@ def return_on_investment(initial_value: Union[float, int],
                   right_index=True,
                   how='outer')
 
+    # apply PMI where necessary, defined as when equity is less than 20% of the appraisal value
     df['pmi'] = 0
     if down_payment < (initial_value * 0.2):
         for month, row in df.iterrows():
