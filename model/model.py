@@ -16,41 +16,47 @@ class HomeModel:
     loan_apr = 0.033
     yearly_payments: int = 12
     property_tax_rate: float = 0.02
-    appraisal_growth_rate: float = 0.04
+    appraisal_growth_rate: float = 0.08
     pmi_rate: float = 0.015
     extend_years: int = 0
-
-    def __post_init__(self):
-        return
 
     @property
     def principal(self) -> float:
         return self.initial_appraisal - self.down_pmt
 
-    def tax_df(self, years: int) -> pd.DataFrame:
-        df = property_tax_amortization(
+    @property
+    def tax_df(self) -> pd.DataFrame:
+        return property_tax_amortization(
             appraisal_val=self.initial_appraisal,
             tax_rate=self.property_tax_rate,
-            duration=years + 1,
+            duration=self.years + self.extend_years + 1,
             appraisal_growth_rate=self.appraisal_growth_rate
         )
 
-        # convert index from years starting at 1 to months starting at 0
-        df.index = pd.Index(data=(df.index - 1) * 12, name='month')
-        df = df.reindex(np.arange(df.index[-1] + 1), method='pad')
-
-        return df
-
     @property
     def mortgage_df(self) -> pd.DataFrame:
-        df = mortgage_amortization(
+        return mortgage_amortization(
             principal=self.principal,
             down_pmt=self.down_pmt,
             apr=self.loan_apr,
             num_years=self.years
         )
 
-        df = pd.merge(df, self.tax_df(years=self.years), how='outer', left_index=True, right_index=True)
+    @property
+    def roi_df(self) -> pd.DataFrame:
+        tdf = self.tax_df
+
+        # convert index from years starting at 1 to months starting at 0, so it can be merged with the other DataFrame
+        tdf.index = pd.Index(data=(tdf.index - 1) * 12, name='month')
+        tdf = tdf.reindex(np.arange(tdf.index[-1] + 1), method='pad')
+
+        df = pd.merge(
+            self.mortgage_df, tdf, how='outer',
+            left_index=True, right_index=True
+        )
+
+        df[['principal paid', 'interest paid']] = df[['principal paid', 'interest paid']].fillna(method='ffill')
+        df = df.fillna(0)
 
         # apply PMI where necessary, defined as when equity is less than 20% of the appraisal value
         df['pmi'] = 0
@@ -76,32 +82,33 @@ class HomeModel:
 
     @property
     def cagr(self) -> float:
-        return self.mortgage_df.iloc[-1].loc['cagr'] * 100
+        return self.roi_df.iloc[-1].loc['cagr'] * 100
 
     @property
     def totals(self) -> pd.DataFrame:
-        totals = self.mortgage_df[['principal paid', 'interest paid', 'tax paid', 'pmi paid']].copy()
+        totals = self.roi_df[['principal paid', 'interest paid', 'tax paid', 'pmi paid']].copy()
         totals.columns = ['Prinicipal', 'Interest', 'Tax', 'PMI']
-
-        if self.extend_years > 0:
-            df = self.tax_df(years=self.years + self.extend_years)
-            totals = totals.reindex(df.index).fillna(0)
-            totals['Tax'] = df['monthly tax payment'].cumsum()
-
         return totals
 
     @property
     def payments(self) -> pd.DataFrame:
-        return self.totals.diff()
+        return self.totals.diff().dropna(axis=0, how='all')
 
     def plot_payments(self):
-        fig = px.bar(self.payments, x=self.payments.index, y=self.payments.columns, title='Payments')
+        pmt = self.payments
+        fig = px.bar(pmt, x=pmt.index, y=pmt.columns, title='Payments')
         return fig
 
     def plot_totals(self):
         fig = px.bar(self.totals, x=self.totals.index, y=self.totals.columns, title='Totals')
         fig.add_scatter(
-            x=self.mortgage_df.index,
-            y=self.mortgage_df['equity'] - self.down_pmt,
+            x=self.roi_df.index,
+            y=self.roi_df['equity'] - self.down_pmt,
             name='Equity')
+        return fig
+
+    def plot_cagr(self):
+        rdf = self.roi_df
+        rdf = rdf[rdf['cagr'] >= 0] * 100
+        fig = px.line(rdf, x=rdf.index, y=['cagr'])
         return fig
