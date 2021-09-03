@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from dataframes import return_on_investment
+from model.dataframes import return_on_investment
 
 
 def cagr_vs_growth(initial_value: Union[float, int],
