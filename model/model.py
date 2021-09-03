@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from .dataframes import property_tax_amortization, mortgage_amortization
+from .dataframes import property_tax_amortization, mortgage_amortization, return_on_investment
 
 
 @dataclass
@@ -44,41 +43,17 @@ class HomeModel:
 
     @property
     def roi_df(self) -> pd.DataFrame:
-        tdf = self.tax_df
-
-        # convert index from years starting at 1 to months starting at 0, so it can be merged with the other DataFrame
-        tdf.index = pd.Index(data=(tdf.index - 1) * 12, name='month')
-        tdf = tdf.reindex(np.arange(tdf.index[-1] + 1), method='pad')
-
-        df = pd.merge(
-            self.mortgage_df, tdf, how='outer',
-            left_index=True, right_index=True
+        return return_on_investment(
+            initial_value=self.initial_appraisal,
+            down_payment=self.down_pmt,
+            closing_rate=self.closing_pct,
+            loan_interest_rate=self.loan_apr,
+            num_years=self.years,
+            extend_years=self.extend_years,
+            pmi_rate=self.pmi_rate,
+            property_tax_rate=self.property_tax_rate,
+            apprasial_growth=self.appraisal_growth_rate
         )
-
-        df[['principal paid', 'interest paid']] = df[['principal paid', 'interest paid']].fillna(method='ffill')
-        df = df.fillna(0)
-
-        # apply PMI where necessary, defined as when equity is less than 20% of the appraisal value
-        df['pmi'] = 0
-        if self.down_pmt < (self.initial_appraisal * 0.2):
-            mask = df['equity'] < (df['appraisal value'] * 0.2)
-            df.loc[mask, 'pmi'] = (df.loc[mask, 'mortgage balance'] * self.pmi_rate) / self.yearly_payments
-
-        df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment'] + df['pmi']
-        df['tax paid'] = df['monthly tax payment'].cumsum()
-        df['pmi paid'] = df['pmi'].cumsum()
-        df['total paid'] = df['total monthly payment'].cumsum() + \
-                           self.down_pmt + \
-                           (self.closing_pct * df['mortgage balance'].iloc[0])
-        df['equity'] = df['appraisal value'] - df['mortgage balance']
-
-        df['cagr'] = [
-            np.exp(np.log(roi) / (n / self.yearly_payments)) - 1
-            if n > 0 else 0
-            for n, roi in enumerate(np.nditer(df['equity'] / df['total paid']))
-        ]
-
-        return df
 
     @property
     def cagr(self) -> float:
