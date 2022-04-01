@@ -2,3 +2,6 @@ ipywidgets
 pandas
 numpy
 plotly
+matplotlib
+jupyter-dash
+werkzeug==2.0.0

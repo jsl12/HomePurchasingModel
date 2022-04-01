@@ -12,7 +12,7 @@ class HomeModel:
     down_pmt: float
     years: int
     closing_pct: float = 0.034
-    loan_apr = 0.033
+    loan_apr: float = 0.033
     yearly_payments: int = 12
     property_tax_rate: float = 0.02
     appraisal_growth_rate: float = 0.08
@@ -84,6 +84,7 @@ class HomeModel:
 
     def plot_cagr(self):
         rdf = self.roi_df
+        rdf = rdf.rolling(12, center=True).max()
         rdf = rdf[rdf['cagr'] >= 0] * 100
         fig = px.line(rdf, x=rdf.index, y=['cagr'])
         return fig
