@@ -63,6 +63,7 @@ class HomeModel:
     def totals(self) -> pd.DataFrame:
         totals = self.roi_df[['principal paid', 'interest paid', 'tax paid', 'pmi paid']].copy()
         totals.columns = ['Prinicipal', 'Interest', 'Tax', 'PMI']
+        totals.index.name = 'Month'
         return totals
 
     @property
@@ -72,14 +73,21 @@ class HomeModel:
     def plot_payments(self):
         pmt = self.payments
         fig = px.bar(pmt, x=pmt.index, y=pmt.columns, title='Payments')
+        fig.update_yaxes(title_text='Amount')
+        fig.update_layout(yaxis_tickformat='$.2s')
         return fig
 
     def plot_totals(self):
-        fig = px.bar(self.totals, x=self.totals.index, y=self.totals.columns, title='Totals')
-        fig.add_scatter(
-            x=self.roi_df.index,
-            y=self.roi_df['equity'] - self.down_pmt,
-            name='Equity')
+        fig = px.bar(
+            title='Total Amounts',
+            data_frame=self.totals,
+            x=self.totals.index, y=self.totals.columns,
+        )
+        equity = self.roi_df['equity'] - self.down_pmt
+        fig.add_scatter(name='Equity', x=self.roi_df.index, y=equity)
+        fig.update_xaxes(title_text='Month')
+        fig.update_yaxes(title_text='Amount', range=[0, equity.iloc[-1]])
+        fig.update_layout(yaxis_tickformat='$.2s')
         return fig
 
     def plot_cagr(self):

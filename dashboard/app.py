@@ -42,7 +42,7 @@ marks = {n: f'{n}%' for n in range(0, 10, 1)}
 marks[10] = '10'
 slider_loan_apr = dcc.Slider(
     id='apr',
-    min=1.0, max=10.0, step=0.2, value=3.3,
+    min=1.0, max=10.0, step=0.2, value=4.8,
     marks=marks
 )
 
@@ -62,7 +62,7 @@ labels = [
     'Down Payment',
     'Loan Term',
     'Loan APR',
-    'Property Growth'
+    'Property Value Growth Rate'
 ]
 
 controls = html.Div([

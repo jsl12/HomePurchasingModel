@@ -143,7 +143,7 @@ def return_on_investment(initial_value: Union[float, int],
     )
 
     # convert index from years starting at 1 to months starting at 0, so it can be merged with the other DataFrame
-    tax_df.index = pd.Index(data=(tax_df.index - 1) * 12, name='month')
+    tax_df.index = pd.Index(data=(tax_df.index - 1) * 12, name='Month')
     tax_df = tax_df.reindex(np.arange(tax_df.index[-1] + 1), method='pad')
 
     mortgage_df = mortgage_amortization(principal=initial_value - down_payment,
