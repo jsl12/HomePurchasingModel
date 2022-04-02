@@ -1,0 +1,25 @@
+# https://www.w3schools.com/css/css_table_style.asp
+
+tbody tr td:nth-child(1) {
+    width: 300px;
+}
+
+tbody tr td:nth-child(2) {
+    width: 100px;
+}
+
+tbody tr td:nth-child(3) {
+    width: 100px;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #f2f2f2;
+}
+
+tbody tr:hover {
+    background-color: lightblue;
+}
+
+tr * {
+    padding: 5px;
+}
