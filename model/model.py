@@ -1,9 +1,14 @@
-from dataclasses import dataclass
+import logging
+from dataclasses import dataclass, asdict
+from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import yaml
 
 from .dataframes import property_tax_amortization, mortgage_amortization, return_on_investment
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -18,6 +23,27 @@ class HomeModel:
     appraisal_growth_rate: float = 0.08
     pmi_rate: float = 0.015
     extend_years: int = 0
+
+    def to_yaml(self, path: Path):
+        with path.open('w') as file:
+            LOGGER.debug(f'Writing to {path.name}')
+            file.writelines(f'{kwarg}: {val}\n' for kwarg, val in asdict(self).items())
+            LOGGER.debug(asdict(self))
+
+    @classmethod
+    def from_yaml(cls, path: Path):
+        if not path.exists():
+            HomeModel(
+                initial_appraisal=350 * 10 ** 3,
+                down_pmt=50 * 10 ** 3,
+                years=15
+            ).to_yaml(path)
+
+        with path.open('r') as file:
+            LOGGER.debug(f'Loading from {path.name}')
+            cfg = yaml.load(file, yaml.SafeLoader)
+            LOGGER.debug(cfg)
+            return HomeModel(**cfg)
 
     @property
     def principal(self) -> float:
@@ -63,6 +89,8 @@ class HomeModel:
     def totals(self) -> pd.DataFrame:
         totals = self.roi_df[['principal paid', 'interest paid', 'tax paid', 'pmi paid']].copy()
         totals.columns = ['Prinicipal', 'Interest', 'Tax', 'PMI']
+        totals['Down Payment'] = self.down_pmt
+        # totals = totals[['Down Payment', 'Prinicipal', 'Interest', 'Tax', 'PMI']]
         totals.index.name = 'Month'
         return totals
 
@@ -71,7 +99,7 @@ class HomeModel:
         return self.totals.diff().dropna(axis=0, how='all')
 
     def plot_payments(self):
-        pmt = self.payments
+        pmt = self.payments.iloc[:, :-1]  # take all the columns except the last one, which is the Down Payment
         fig = px.bar(pmt, x=pmt.index, y=pmt.columns, title='Payments')
         fig.update_yaxes(title_text='Amount')
         fig.update_layout(yaxis_tickformat='$.2s')

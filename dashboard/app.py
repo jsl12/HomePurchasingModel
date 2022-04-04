@@ -19,7 +19,7 @@ rate_df = get_rates()
 
 app.layout = html.Div(
     [
-        create_controls(MODEL_PATH),
+        create_controls(HomeModel.from_yaml(MODEL_PATH)),
         dcc.Graph(id='payments'),
         dcc.Graph(id='totals'),
         dcc.Markdown('## [NerdWallet Mortagage Rates](https://www.nerdwallet.com/mortgages/mortgage-rates)'),
@@ -89,4 +89,8 @@ def update_totals(home_val, down_pmt, loan_term, apr, growth):
 
 
 if __name__ == '__main__':
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
     app.run_server(debug=True)

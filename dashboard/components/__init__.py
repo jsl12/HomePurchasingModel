@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from dash import dcc, html
 
 from model import HomeModel
@@ -10,9 +8,7 @@ def inclusive_range(start, stop, *args):
     yield stop
 
 
-def create_controls(path: Path):
-    model = HomeModel.from_yaml(path)
-
+def create_controls(model: HomeModel):
     slider_home_val = dcc.Slider(
         id='home-val',
         value=model.initial_appraisal,
