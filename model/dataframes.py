@@ -162,8 +162,8 @@ def return_on_investment(initial_value: Union[float, int],
     # apply PMI where necessary, defined as when equity is less than 20% of the appraisal value
     df['pmi'] = 0
     if down_payment < (initial_value * 0.2):
-        mask = df['equity'] < (df['appraisal value'] * 0.2)
-        df.loc[mask, 'pmi'] = (df.loc[mask, 'mortgage balance'] * pmi_rate) / 12
+        mask = df['equity'] < (df['appraisal value'].iloc[0] * 0.2)
+        df.loc[mask, 'pmi'] = (df.loc[mask, 'mortgage balance'].iloc[0] * pmi_rate) / 12
 
     df['total monthly payment'] = df['mortgage payment'] + df['monthly tax payment'] + df['pmi']
     df['tax paid'] = df['monthly tax payment'].cumsum()
