@@ -3,7 +3,6 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
 import yaml
 
 from .dataframes import property_tax_amortization, mortgage_amortization, return_on_investment
@@ -90,37 +89,9 @@ class HomeModel:
         totals = self.roi_df[['principal paid', 'interest paid', 'tax paid', 'pmi paid']].copy()
         totals.columns = ['Prinicipal', 'Interest', 'Tax', 'PMI']
         totals['Down Payment'] = self.down_pmt
-        # totals = totals[['Down Payment', 'Prinicipal', 'Interest', 'Tax', 'PMI']]
         totals.index.name = 'Month'
         return totals
 
     @property
     def payments(self) -> pd.DataFrame:
         return self.totals.diff().dropna(axis=0, how='all')
-
-    def plot_payments(self):
-        pmt = self.payments.iloc[:, :-1]  # take all the columns except the last one, which is the Down Payment
-        fig = px.bar(pmt, x=pmt.index, y=pmt.columns, title='Payments')
-        fig.update_yaxes(title_text='Amount')
-        fig.update_layout(yaxis_tickformat='$.2s')
-        return fig
-
-    def plot_totals(self):
-        fig = px.bar(
-            title='Total Amounts',
-            data_frame=self.totals,
-            x=self.totals.index, y=self.totals.columns,
-        )
-        equity = self.roi_df['equity'] - self.down_pmt
-        fig.add_scatter(name='Equity', x=self.roi_df.index, y=equity)
-        fig.update_xaxes(title_text='Month')
-        fig.update_yaxes(title_text='Amount', range=[0, equity.iloc[-1]])
-        fig.update_layout(yaxis_tickformat='$.2s')
-        return fig
-
-    def plot_cagr(self):
-        rdf = self.roi_df
-        rdf = rdf.rolling(12, center=True).max()
-        rdf = rdf[rdf['cagr'] >= 0] * 100
-        fig = px.line(rdf, x=rdf.index, y=['cagr'])
-        return fig

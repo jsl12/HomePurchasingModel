@@ -1,12 +1,11 @@
 from pathlib import Path
 
-from dash import Dash
-from dash import dcc, html
+from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 
-from components import create_controls
+from components import create_controls, get_rates
+from components import plot_totals, plot_payments
 from model import HomeModel
-from model.rates import get_rates
 
 MODEL_PATH = Path('model.yaml').resolve()
 
@@ -64,7 +63,7 @@ def update_payments(home_val, down_pmt, loan_term, apr, growth):
         loan_apr=apr / 100,
     )
     hm.to_yaml(MODEL_PATH.resolve())
-    return hm.plot_payments()
+    return plot_payments(hm)
 
 
 @app.callback(
@@ -85,7 +84,7 @@ def update_totals(home_val, down_pmt, loan_term, apr, growth):
         appraisal_growth_rate=growth / 100,
         loan_apr=apr / 100,
     )
-    return hm.plot_totals()
+    return plot_totals(hm)
 
 
 if __name__ == '__main__':
